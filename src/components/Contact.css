@@ -1,0 +1,9 @@
+.section-contact {
+  /* view-specific overrides if needed */
+}
+/* Pantallas grandes - 1440px+ */
+@media (min-width: 1440px) {
+  .section-content h2 {
+    font-size: 4.5rem;
+  }
+}

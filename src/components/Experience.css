@@ -1,0 +1,26 @@
+
+
+.scroll-arrow {
+  position: absolute;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: none;
+  z-index: 6;
+}
+
+.arrow-icon {
+  width: 32px;
+  height: 32px;
+  display: block;
+  animation: bounceDown 1.6s ease-in-out infinite;
+}
+
+/* Pantallas grandes - 1440px+ */
+@media (min-width: 1440px) {
+  .arrow-icon {
+    width: 40px;
+    height: 40px;
+  }
+}
