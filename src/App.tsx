@@ -11,6 +11,24 @@ function App() {
   const activeSection = useActiveSection();
   useSmoothScroll();
 
+  const sectionOrder = ['home', 'about', 'experience', 'contact'];
+  const currentIndex = sectionOrder.indexOf(activeSection);
+  const nextSection = currentIndex >= 0 ? sectionOrder[currentIndex + 1] : undefined;
+
+  const handleNextSection = () => {
+    if (!nextSection) return;
+
+    const scrollContainer = document.querySelector('.scroll-container');
+    const targetSection = document.getElementById(nextSection);
+
+    if (!scrollContainer || !targetSection) return;
+
+    scrollContainer.scrollTo({
+      top: targetSection.offsetTop,
+      behavior: 'smooth',
+    });
+  };
+
   return (
     <div className="App">
       <Navbar activeSection={activeSection} />
@@ -20,6 +38,18 @@ function App() {
         <Experience />
         <Contact />
       </div>
+      {nextSection && (
+        <button
+          type="button"
+          aria-label={`Scroll to ${nextSection}`}
+          className="scroll-arrow-fixed"
+          onClick={handleNextSection}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="arrow-icon-fixed">
+            <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 5.25 7.5 7.5 7.5-7.5m-15 6 7.5 7.5 7.5-7.5" />
+          </svg>
+        </button>
+      )}
     </div>
   );
 }

@@ -23,6 +23,9 @@ const Home: React.FC = () => {
             pauseDuration={1500}
             showCursor={true}
             cursorCharacter="|"
+            loop={false}
+            startOnVisible={true}
+            restartOnVisible={true}
           />
         </h1>
         <p className="hero-subtitle">Full-stack engineer building thoughtful, human-centered software</p>
@@ -30,11 +33,6 @@ const Home: React.FC = () => {
         With a background in full-stack engineering and a deep connection to art and creativity, I focus on turning complex problems into clear, intuitive, and scalable solutions.
         <br></br>Logic, design, and empathy guide everything I create.</p>
       </div>
-      <a href="#about" aria-label="Scroll to About" className="scroll-arrow">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="arrow-icon">
-          <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 5.25 7.5 7.5 7.5-7.5m-15 6 7.5 7.5 7.5-7.5" />
-        </svg>
-      </a>
     </section>
   );
 };

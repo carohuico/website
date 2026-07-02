@@ -22,6 +22,7 @@ interface TextTypeProps {
   variableSpeed?: { min: number; max: number };
   onSentenceComplete?: (sentence: string, index: number) => void;
   startOnVisible?: boolean;
+  restartOnVisible?: boolean;
   reverseMode?: boolean;
 }
 
@@ -43,6 +44,7 @@ const TextType = ({
   variableSpeed,
   onSentenceComplete,
   startOnVisible = false,
+  restartOnVisible = false,
   reverseMode = false,
   ...props
 }: TextTypeProps & React.HTMLAttributes<HTMLElement>) => {
@@ -53,6 +55,8 @@ const TextType = ({
   const [isVisible, setIsVisible] = useState(!startOnVisible);
   const cursorRef = useRef<HTMLSpanElement>(null);
   const containerRef = useRef<HTMLElement>(null);
+  const hasBeenVisibleRef = useRef(false);
+  const hasLeftVisibleRef = useRef(false);
 
   const textArray = useMemo(() => (Array.isArray(text) ? text : [text]), [text]);
 
@@ -67,14 +71,32 @@ const TextType = ({
     return textColors[currentTextIndex % textColors.length];
   };
 
+  const resetTypingState = () => {
+    setDisplayedText('');
+    setCurrentCharIndex(0);
+    setIsDeleting(false);
+    setCurrentTextIndex(0);
+  };
+
   useEffect(() => {
-    if (!startOnVisible || !containerRef.current) return;
+    if ((!startOnVisible && !restartOnVisible) || !containerRef.current) return;
 
     const observer = new IntersectionObserver(
       entries => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
+            if (restartOnVisible && hasBeenVisibleRef.current && hasLeftVisibleRef.current) {
+              resetTypingState();
+            }
+
             setIsVisible(true);
+            hasBeenVisibleRef.current = true;
+            hasLeftVisibleRef.current = false;
+          } else if (restartOnVisible) {
+            setIsVisible(false);
+            if (hasBeenVisibleRef.current) {
+              hasLeftVisibleRef.current = true;
+            }
           }
         });
       },
@@ -83,7 +105,7 @@ const TextType = ({
 
     observer.observe(containerRef.current);
     return () => observer.disconnect();
-  }, [startOnVisible]);
+  }, [restartOnVisible, startOnVisible]);
 
   useEffect(() => {
     if (showCursor && cursorRef.current) {

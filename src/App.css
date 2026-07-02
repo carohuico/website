@@ -12,6 +12,39 @@
   overflow: hidden;
 }
 
+.scroll-arrow-fixed {
+  position: fixed;
+  left: 50%;
+  bottom: 1.5rem;
+  transform: translateX(-50%);
+  z-index: 30;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.9);
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.arrow-icon-fixed {
+  width: 32px;
+  height: 32px;
+  display: block;
+  animation: bounceDown 1.6s ease-in-out infinite;
+}
+
+.scroll-arrow-fixed:hover {
+  color: #ffffff;
+}
+
+.scroll-arrow-fixed:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.75);
+  outline-offset: 6px;
+  border-radius: 999px;
+}
+
 .scroll-container {
   width: 100vw;
   height: 100vh;
@@ -64,11 +97,11 @@
   animation: fadeInUp 1s ease-out forwards;
 }
 
-/* Mobile - agregar padding para el header */
+/* Mobile - add padding for the header */
 @media (max-width: 767px) {
   .section {
     padding-top: 90px;
-    padding-bottom: 40px;
+    padding-bottom: 200px;
   }
   
   .section-content {
@@ -145,7 +178,7 @@
   animation: fadeInZoom 1s ease-out forwards 0.6s;
 }
 
-/* Pantallas grandes - 1440px+ */
+/* Large screens - 1440px+ */
 @media (min-width: 1440px) {
   .section-content h2 {
     font-size: 4.5rem;
@@ -245,5 +278,23 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes bounceDown {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(8px);
+  }
+}
+
+@media (min-width: 1440px) {
+  .arrow-icon-fixed {
+    width: 40px;
+    height: 40px;
   }
 }

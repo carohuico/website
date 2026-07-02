@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, PanInfo, useMotionValue, useTransform } from 'framer-motion';
-import { FiType, FiCircle, FiLayers, FiLayout, FiCode } from 'react-icons/fi';
 import './Carousel.css';
 
 export interface CarouselItem {
@@ -8,6 +7,10 @@ export interface CarouselItem {
   description: string;
   id: number;
   backgroundImage?: string;
+  /** Detail shown when the circle flips */
+  period?: string;
+  role?: string;
+  highlights?: string[];
 }
 
 export interface CarouselProps {
@@ -18,6 +21,8 @@ export interface CarouselProps {
   pauseOnHover?: boolean;
   loop?: boolean;
   round?: boolean;
+  responsive?: boolean;
+  className?: string;
 }
 
 const DEFAULT_ITEMS: CarouselItem[] = [
@@ -61,12 +66,16 @@ interface CarouselItemProps {
   trackItemOffset: number;
   x: any;
   transition: any;
+  isFlipped: boolean;
+  onFlip: () => void;
 }
 
-function CarouselItem({ item, index, itemWidth, round, trackItemOffset, x, transition }: CarouselItemProps) {
+function CarouselItem({ item, index, itemWidth, round, trackItemOffset, x, transition, isFlipped, onFlip }: CarouselItemProps) {
   const range = [-(index + 1) * trackItemOffset, -index * trackItemOffset, -(index - 1) * trackItemOffset];
   const outputRange = [90, 0, -90];
   const rotateY = useTransform(x, range, outputRange, { clamp: false });
+  const hasDetail = Boolean(item.period || item.role || (item.highlights && item.highlights.length));
+  const isLongDescription = item.description.trim().length > 28 || item.description.trim().split(/\s+/).length > 3;
 
   return (
     <motion.div
@@ -76,20 +85,39 @@ function CarouselItem({ item, index, itemWidth, round, trackItemOffset, x, trans
         width: itemWidth,
         height: round ? itemWidth : '100%',
         rotateY: rotateY,
-        ...(round && { borderRadius: '50%' }),
-        ...(item.backgroundImage && {
-          backgroundImage: `url(${item.backgroundImage})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center'
-        })
+        ...(round && { borderRadius: '50%' })
       }}
       transition={transition}
     >
-      <div className="carousel-item-overlay"></div>
-      <div className="carousel-item-content">
-        <div className="carousel-item-title">{item.title}</div>
-        <p className="carousel-item-description">{item.description}</p>
-      </div>
+      <button
+        type="button"
+        className={`carousel-flip ${isFlipped ? 'flipped' : ''}`}
+        aria-label={isFlipped ? `Hide details for ${item.title}` : `View details for ${item.title}`}
+        onClick={hasDetail ? onFlip : undefined}
+      >
+        <div className="carousel-face carousel-front">
+          <div className="carousel-item-overlay"></div>
+          <div className="carousel-item-content">
+            <div className="carousel-item-title">{item.title}</div>
+            <p className={`carousel-item-description ${isLongDescription ? 'is-long' : ''}`}>{item.description}</p>
+            {hasDetail && <span className="carousel-flip-hint">Tap to see more</span>}
+          </div>
+        </div>
+        <div className="carousel-face carousel-back">
+          <div className="carousel-back-content">
+            {item.period && <span className="carousel-back-period">{item.period}</span>}
+            <div className="carousel-back-title">{item.title}</div>
+            {item.role && <p className="carousel-back-role">{item.role}</p>}
+            {item.highlights && item.highlights.length > 0 && (
+              <ul className="carousel-back-highlights">
+                {item.highlights.map((h, i) => (
+                  <li key={i}>{h}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      </button>
     </motion.div>
   );
 }
@@ -101,10 +129,50 @@ export default function Carousel({
   autoplayDelay = 3000,
   pauseOnHover = false,
   loop = false,
-  round = false
+  round = false,
+  responsive = false,
+  className = ''
 }: CarouselProps): React.JSX.Element {
   const containerPadding = 16;
-  const itemWidth = baseWidth - containerPadding * 2;
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [measuredWidth, setMeasuredWidth] = useState<number>(baseWidth);
+
+  useEffect(() => {
+    if (!responsive || !containerRef.current) {
+      setMeasuredWidth(baseWidth);
+      return undefined;
+    }
+
+    const updateWidth = (width: number) => {
+      setMeasuredWidth(width);
+    };
+
+    updateWidth(containerRef.current.getBoundingClientRect().width);
+
+    if (typeof ResizeObserver === 'undefined') {
+      const handleResize = () => {
+        if (containerRef.current) {
+          updateWidth(containerRef.current.getBoundingClientRect().width);
+        }
+      };
+
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+    }
+
+    const observer = new ResizeObserver(entries => {
+      const entry = entries[0];
+      if (entry) {
+        updateWidth(entry.contentRect.width);
+      }
+    });
+
+    observer.observe(containerRef.current);
+
+    return () => observer.disconnect();
+  }, [baseWidth, responsive]);
+
+  const itemWidth = responsive ? Math.max(measuredWidth - containerPadding * 2, 0) : baseWidth - containerPadding * 2;
   const trackItemOffset = itemWidth + GAP;
   const itemsForRender = useMemo(() => {
     if (!loop) return items;
@@ -117,8 +185,11 @@ export default function Carousel({
   const [isHovered, setIsHovered] = useState<boolean>(false);
   const [isJumping, setIsJumping] = useState<boolean>(false);
   const [isAnimating, setIsAnimating] = useState<boolean>(false);
-
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [flippedIndex, setFlippedIndex] = useState<number | null>(null);
+  const isFlipped = flippedIndex !== null;
+  const toggleFlip = (index: number) => {
+    setFlippedIndex(prev => (prev === index ? null : index));
+  };
   useEffect(() => {
     if (pauseOnHover && containerRef.current) {
       const container = containerRef.current;
@@ -136,13 +207,14 @@ export default function Carousel({
   useEffect(() => {
     if (!autoplay || itemsForRender.length <= 1) return undefined;
     if (pauseOnHover && isHovered) return undefined;
+    if (isFlipped) return undefined;
 
     const timer = setInterval(() => {
       setPosition(prev => Math.min(prev + 1, itemsForRender.length - 1));
     }, autoplayDelay);
 
     return () => clearInterval(timer);
-  }, [autoplay, autoplayDelay, isHovered, pauseOnHover, itemsForRender.length]);
+  }, [autoplay, autoplayDelay, isHovered, pauseOnHover, itemsForRender.length, isFlipped]);
 
   useEffect(() => {
     const startingPosition = loop ? 1 : 0;
@@ -207,6 +279,7 @@ export default function Carousel({
 
     if (direction === 0) return;
 
+    setFlippedIndex(null);
     setPosition(prev => {
       const next = prev + direction;
       const max = itemsForRender.length - 1;
@@ -229,15 +302,11 @@ export default function Carousel({
   return (
     <div
       ref={containerRef}
-      className={`carousel-container ${round ? 'round' : ''}`}
-      style={{
-        width: `${baseWidth}px`,
-        ...(round && { height: `${baseWidth}px`, borderRadius: '50%' })
-      }}
+      className={`carousel-container ${round ? 'round' : ''} ${responsive ? 'responsive' : ''} ${className}`}
     >
       <motion.div
         className="carousel-track"
-        drag={isAnimating ? false : 'x'}
+        drag={isAnimating || isFlipped ? false : 'x'}
         {...dragProps}
         style={{
           width: itemWidth,
@@ -262,6 +331,8 @@ export default function Carousel({
             trackItemOffset={trackItemOffset}
             x={x}
             transition={effectiveTransition}
+            isFlipped={flippedIndex === index}
+            onFlip={() => toggleFlip(index)}
           />
         ))}
       </motion.div>
@@ -274,7 +345,10 @@ export default function Carousel({
               animate={{
                 scale: activeIndex === index ? 1.2 : 1
               }}
-              onClick={() => setPosition(loop ? index + 1 : index)}
+              onClick={() => {
+                setFlippedIndex(null);
+                setPosition(loop ? index + 1 : index);
+              }}
               transition={{ duration: 0.15 }}
             />
           ))}

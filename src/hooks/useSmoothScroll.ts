@@ -1,80 +1,85 @@
 import { useEffect } from 'react';
 
+/**
+ * Section-based scroll control (wheel / desktop only):
+ *
+ * - Inside a section you can scroll freely through its content,
+ *   but the scroll is clipped to the section boundaries (it never invades the
+ *   next or previous section halfway through).
+ * - When you reach the edge of a section and keep scrolling, it jumps to the START
+ *   of the destination section (title first), regardless of direction.
+ *   That way, when entering a section from above or below, it always shows
+ *   from the beginning of the content.
+ *
+ * On mobile (without wheel events) native touch scrolling is used.
+ */
 export const useSmoothScroll = () => {
   useEffect(() => {
     const scrollContainer = document.querySelector('.scroll-container') as HTMLElement;
     if (!scrollContainer) return;
 
-    let isScrolling = false;
-    let scrollTimeout: NodeJS.Timeout;
+    const EDGE = 4; // px tolerance for considering "I'm at the edge"
+    let isAnimating = false;
+    let animTimeout: ReturnType<typeof setTimeout>;
+
+    const getSections = () =>
+      Array.from(document.querySelectorAll('.section')) as HTMLElement[];
+
+    // Index of the section we are in according to the current position.
+    const getCurrentIndex = (sections: HTMLElement[], scrollTop: number) => {
+      let idx = 0;
+      for (let i = 0; i < sections.length; i++) {
+        if (scrollTop >= sections[i].offsetTop - EDGE) idx = i;
+        else break;
+      }
+      return idx;
+    };
+
+    const snapTo = (top: number) => {
+      isAnimating = true;
+      scrollContainer.scrollTo({ top, behavior: 'smooth' });
+      clearTimeout(animTimeout);
+      animTimeout = setTimeout(() => {
+        isAnimating = false;
+      }, 800);
+    };
 
     const handleWheel = (e: WheelEvent) => {
-      if (isScrolling) {
-        e.preventDefault();
-        return;
-      }
+      e.preventDefault();
+      if (isAnimating || e.deltaY === 0) return;
 
-      const sections = Array.from(document.querySelectorAll('.section')) as HTMLElement[];
-      const currentScrollPos = scrollContainer.scrollTop;
-      const viewportHeight = scrollContainer.clientHeight;
+      const sections = getSections();
+      if (sections.length === 0) return;
 
-      // Encontrar la sección actual
-      let currentSectionIndex = 0;
-      let currentSection = sections[0];
+      const scrollTop = scrollContainer.scrollTop;
+      const viewport = scrollContainer.clientHeight;
+      const cur = getCurrentIndex(sections, scrollTop);
+      const section = sections[cur];
+      const sectionTop = section.offsetTop;
+      // Maximum scroll position inside this section (its bottom edge
+      // aligned with the viewport bottom).
+      const maxWithin = Math.max(sectionTop, sectionTop + section.offsetHeight - viewport);
+      const hasOverflow = maxWithin - sectionTop > EDGE;
 
-      sections.forEach((section, index) => {
-        const sectionTop = section.offsetTop;
-        const sectionBottom = sectionTop + section.offsetHeight;
-
-        if (currentScrollPos >= sectionTop - 100 && currentScrollPos < sectionBottom) {
-          currentSectionIndex = index;
-          currentSection = section;
-        }
-      });
-
-      const sectionTop = currentSection.offsetTop;
-      const sectionBottom = sectionTop + currentSection.offsetHeight;
-      const positionInSection = currentScrollPos - sectionTop;
-      const sectionContentHeight = currentSection.offsetHeight;
-
-      // Si hay scroll positivo (abajo) y estamos al final de la sección
       if (e.deltaY > 0) {
-        const distanceToSectionEnd = sectionContentHeight - positionInSection - viewportHeight;
-
-        // Si estamos cerca del final (menos de 200px), ir a la siguiente sección
-        if (distanceToSectionEnd < 100 && currentSectionIndex < sections.length - 1) {
-          isScrolling = true;
-          const nextSectionTop = sections[currentSectionIndex + 1].offsetTop;
-
-          scrollContainer.scrollTo({
-            top: nextSectionTop,
-            behavior: 'smooth'
-          });
-
-          scrollTimeout = setTimeout(() => {
-            isScrolling = false;
-          }, 1200);
-
-          e.preventDefault();
+        // Hacia abajo
+        if (hasOverflow && scrollTop < maxWithin - EDGE) {
+          // There is still content below: free scroll clipped to the edge.
+          const target = Math.min(scrollTop + e.deltaY, maxWithin);
+          scrollContainer.scrollTo({ top: target, behavior: 'instant' as ScrollBehavior });
+        } else if (cur < sections.length - 1) {
+          // At the end of the content: jump to the start of the next section.
+          snapTo(sections[cur + 1].offsetTop);
         }
-      }
-      // Si hay scroll negativo (arriba) y estamos al inicio de la sección
-      else if (e.deltaY < 0) {
-        if (positionInSection < 200 && currentSectionIndex > 0) {
-          isScrolling = true;
-          const prevSectionTop = sections[currentSectionIndex - 1].offsetTop;
-          const prevSectionHeight = sections[currentSectionIndex - 1].offsetHeight;
-
-          scrollContainer.scrollTo({
-            top: prevSectionTop + prevSectionHeight - viewportHeight,
-            behavior: 'smooth'
-          });
-
-          scrollTimeout = setTimeout(() => {
-            isScrolling = false;
-          }, 1200);
-
-          e.preventDefault();
+      } else {
+        // Hacia arriba
+        if (hasOverflow && scrollTop > sectionTop + EDGE) {
+          // There is still content above: free scroll clipped to the start.
+          const target = Math.max(scrollTop + e.deltaY, sectionTop);
+          scrollContainer.scrollTo({ top: target, behavior: 'instant' as ScrollBehavior });
+        } else if (cur > 0) {
+          // At the start of the content: jump to the START of the previous section.
+          snapTo(sections[cur - 1].offsetTop);
         }
       }
     };
@@ -83,7 +88,7 @@ export const useSmoothScroll = () => {
 
     return () => {
       scrollContainer.removeEventListener('wheel', handleWheel);
-      clearTimeout(scrollTimeout);
+      clearTimeout(animTimeout);
     };
   }, []);
 };
