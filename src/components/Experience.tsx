@@ -9,30 +9,21 @@ const professionalItems: CarouselItem[] = [
     description: 'Full time Developer',
     id: 1,
     period: '2026 - Present',
-    highlights: [
-      'Built digital transformation solutions for clients',
-      'Full-stack development for web applications and internal tools',
-    ],
+    highlight: 'Built digital transformation solutions with full-stack web development for client and internal tools.'
   },
   {
     title: 'Kalypso: A Rockwell Automation Business',
     description: 'Software Development and Technical Consulting Intern',
-    id: 1,
+    id: 2,
     period: '2024 - Present',
-    highlights: [
-      'Demo creation and prototyping for clients',
-      'Provided technical consulting with multidisciplinary teams',
-    ],
+    highlight: 'Created client-facing demos and prototypes while providing technical consulting with multidisciplinary teams.'
   },
   {
     title: 'Momentum Intern',
     description: 'Softtek',
-    id: 2,
+    id: 3,
     period: '2023',
-    highlights: [
-      'Tecnical consulting and software development for internal tools',
-      'Projects using agile methodologies',
-    ],
+    highlight: 'Delivered technical consulting and software development for internal tools using agile methodologies.'
   }
 ];
 
@@ -42,30 +33,21 @@ const leadershipItems: CarouselItem[] = [
     description: 'FEUDEM',
     id: 1,
     period: '2024',
-    highlights: [
-      'Student representation at the university',
-      'Coordinated initiatives and events',
-    ],
+    highlight: 'Represented students at the university while coordinating strategic initiatives and events.'
   },
   {
     title: 'Women Techmakers Ambassador',
     description: 'Google Developer Groups',
     id: 2,
     period: '2023 - Present',
-    highlights: [
-      'Promoted diversity and inclusion in tech',
-      'Organized workshops and talks',
-    ],
+    highlight: 'Promoted diversity and inclusion in tech through workshops, talks, and community outreach.'
   },
   {
     title: 'IEEE Women in Engineering',
     description: 'Professional Community',
     id: 3,
     period: '2022 - 2023',
-    highlights: [
-      'Professional engineering networking',
-      'STEM oriented initiatives and mentorship',
-    ],
+    highlight: 'Built professional engineering networks and led STEM-oriented initiatives with mentorship impact.'
   }
 ];
 
@@ -75,20 +57,14 @@ const academicItems: CarouselItem[] = [
     description: 'Rainly - AI System',
     id: 1,
     period: '2025',
-    highlights: [
-      'Rainly AI system',
-      'End-to-end design and implementation',
-    ],
+    highlight: 'Designed and implemented Rainly as an end-to-end AI system from architecture to delivery.'
   },
   {
     title: 'Programming Competitions',
     description: 'Hackathons & Challenges',
     id: 2,
     period: '2021 - 2024',
-    highlights: [
-      'Participated in hackathons',
-      'Programming and algorithms challenges',
-    ],
+    highlight: 'Competed in hackathons and algorithmic programming challenges with iterative problem-solving focus.'
   }
 ];
 

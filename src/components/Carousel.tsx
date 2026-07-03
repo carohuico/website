@@ -10,6 +10,7 @@ export interface CarouselItem {
   /** Detail shown when the circle flips */
   period?: string;
   role?: string;
+  highlight?: string;
   highlights?: string[];
 }
 
@@ -74,8 +75,17 @@ function CarouselItem({ item, index, itemWidth, round, trackItemOffset, x, trans
   const range = [-(index + 1) * trackItemOffset, -index * trackItemOffset, -(index - 1) * trackItemOffset];
   const outputRange = [90, 0, -90];
   const rotateY = useTransform(x, range, outputRange, { clamp: false });
-  const hasDetail = Boolean(item.period || item.role || (item.highlights && item.highlights.length));
+  const combinedHighlight = item.highlight || item.highlights?.join(' ');
+  const hasDetail = Boolean(item.period || item.role || combinedHighlight);
   const isLongDescription = item.description.trim().length > 28 || item.description.trim().split(/\s+/).length > 3;
+  const isLongHighlight = Boolean(combinedHighlight && combinedHighlight.length > 120);
+
+  const handleFlipKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      onFlip();
+    }
+  };
 
   return (
     <motion.div
@@ -89,11 +99,17 @@ function CarouselItem({ item, index, itemWidth, round, trackItemOffset, x, trans
       }}
       transition={transition}
     >
-      <button
-        type="button"
+      <div
         className={`carousel-flip ${isFlipped ? 'flipped' : ''}`}
-        aria-label={isFlipped ? `Hide details for ${item.title}` : `View details for ${item.title}`}
-        onClick={hasDetail ? onFlip : undefined}
+        {...(hasDetail
+          ? {
+              role: 'button' as const,
+              tabIndex: 0,
+              'aria-label': isFlipped ? `Hide details for ${item.title}` : `View details for ${item.title}`,
+              onClick: onFlip,
+              onKeyDown: handleFlipKeyDown
+            }
+          : {})}
       >
         <div className="carousel-face carousel-front">
           <div className="carousel-item-overlay"></div>
@@ -108,16 +124,12 @@ function CarouselItem({ item, index, itemWidth, round, trackItemOffset, x, trans
             {item.period && <span className="carousel-back-period">{item.period}</span>}
             <div className="carousel-back-title">{item.title}</div>
             {item.role && <p className="carousel-back-role">{item.role}</p>}
-            {item.highlights && item.highlights.length > 0 && (
-              <ul className="carousel-back-highlights">
-                {item.highlights.map((h, i) => (
-                  <li key={i}>{h}</li>
-                ))}
-              </ul>
+            {combinedHighlight && (
+              <p className={`carousel-back-highlight-text ${isLongHighlight ? 'is-long' : ''}`}>{combinedHighlight}</p>
             )}
           </div>
         </div>
-      </button>
+      </div>
     </motion.div>
   );
 }
